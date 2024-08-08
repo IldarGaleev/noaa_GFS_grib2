@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/nilsmagnus/grib/griblib"
 )
@@ -153,19 +154,30 @@ func main() {
 	}
 
 	// messages id: https://www.nco.ncep.noaa.gov/pmb/products/gfs/gfs.t00z.pgrb2.0p25.f000.shtml
+	fmt.Println("Read messages...")
 	messages := getMessages(fileName)
+	fmt.Println("Extract data")
 
-	pressure_sea_lvl := 0
-	processMessage(messages[pressure_sea_lvl], pressure_sea_lvl)
+	var wg sync.WaitGroup
 
-	sunshine_duration := 600 - 1
-	processMessage(messages[sunshine_duration], sunshine_duration)
+	layers := []int{
+		1,   //pressure_sea_lvl
+		580, //temp_2_m_above_ground
+		600, //sunshine_duration
+		682, //surface_mask
+	}
 
-	temp_2_m_above_ground := 580 - 1
-	processMessage(messages[temp_2_m_above_ground], temp_2_m_above_ground)
+	for _, layer := range layers {
+		wg.Add(1)
+		go func(msg []*griblib.Message, lId int) {
+			defer wg.Done()
+			processMessage(msg[lId], lId)
+		}(messages, layer-1)
+	}
 
-	surface_mask := 682 - 1
-	processMessage(messages[surface_mask], surface_mask)
+	wg.Wait()
+
+	fmt.Print("Done!")
 
 	// fmt.Print(len(messages))
 	// for id, message := range messages {
