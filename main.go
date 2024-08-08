@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -10,10 +11,11 @@ import (
 	"github.com/nilsmagnus/grib/griblib"
 )
 
+// GFS doc: https://www.emc.ncep.noaa.gov/emc/pages/numerical_forecast_systems/gfs/documentation.php
 
 const (
 	baseUrl = "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod"
-	
+
 	// filtered url: https://nomads.ncep.noaa.gov/gribfilter.php?ds=fnl
 	// url = "https://nomads.ncep.noaa.gov/cgi-bin/filter_fnl.pl?dir=%2Fgdas.20240807%2F00%2Fatmos&file=gdas.t00z.pgrb2.1p00.f000&var_PRES=on&var_TMP=on&lev_2_m_above_ground=on&lev_80_m_above_ground=on"
 )
@@ -40,7 +42,6 @@ const (
 	GridSize_1p00 = GridSize("1p00")
 )
 
-
 func pathBuilder(model Model, day int, month int, year int, cycle ModelCycle, forecastTime int, gridSize GridSize) string {
 	return fmt.Sprintf(
 		"/gfs.%[1]d%02[2]d%02[3]d/%[4]s/%[7]s/gfs.t%[4]sz.%[8]s.%[6]s.f%03[5]d",
@@ -63,7 +64,7 @@ func downloadFile(URL, fileName string) error {
 	defer response.Body.Close()
 
 	if response.StatusCode != 200 {
-		return errors.New("download fail")
+		return fmt.Errorf("download fail, code: %d", response.StatusCode)
 	}
 
 	file, err := os.Create(fileName)
@@ -80,7 +81,7 @@ func downloadFile(URL, fileName string) error {
 	return nil
 }
 
-func saveAs2dArray(data []float64, width uint32, fileName string) {
+func saveAs2dArray(data []float64, col, row uint32, fileName string) {
 	dFile, err := os.Create(fileName)
 	if err != nil {
 		fmt.Println(err)
@@ -89,38 +90,37 @@ func saveAs2dArray(data []float64, width uint32, fileName string) {
 
 	defer dFile.Close()
 
-	pointsCount := len(data)
-
-	dFile.WriteString("[")
-
-	col := 0
-	for pI, dValue := range data {
-		if col == 0 {
-			dFile.WriteString("[")
+	resultData := make([][]float64, 0, row)
+	totalLen := uint32(len(data))
+	for i := uint32(0); i < row; i++ {
+		from := i * col
+		if from > totalLen {
+			resultData = append(resultData, make([]float64, col))
+			continue
 		}
-		dFile.WriteString(fmt.Sprintf("%f", dValue))
-		col++
-		if col == int(width) {
-			col = 0
-			if pI == pointsCount-1 {
-				dFile.WriteString("]")
-			} else {
-				dFile.WriteString("],")
-			}
-		} else {
-			dFile.WriteString(",")
+		to := from + min(totalLen-from, col)
+		rowData := data[from:to]
+		rowDataLen := uint32(len(rowData))
+		if rowDataLen < col {
+			rowData = append(rowData, make([]float64, col-rowDataLen)...)
 		}
+		resultData = append(resultData, rowData)
 	}
-	dFile.WriteString("]")
+
+	jsonData, err := json.Marshal(resultData)
+	if err != nil {
+		panic(err)
+	}
+	dFile.Write(jsonData)
 }
 
 func processMessage(message *griblib.Message, id int) {
 	def := message.Section3.Definition.(*griblib.Grid0)
 	fmt.Printf("%[1]d - %[2]d(%[3]d x %[4]d)\n", id, message.Section5.PointsNumber, def.Ni, def.Nj)
-	saveAs2dArray(message.Data(), def.Ni, fmt.Sprintf("prod/msg_%d.json", id))
+	saveAs2dArray(message.Data(), def.Ni, def.Nj, fmt.Sprintf("prod/msg_%d.json", id))
 }
 
-func getMessages(fileName string)[]*griblib.Message{
+func getMessages(fileName string) []*griblib.Message {
 	gribfile, err := os.Open(fileName)
 	if err != nil {
 		panic(err)
@@ -142,7 +142,7 @@ func main() {
 
 	if _, err := os.Stat(fileName); errors.Is(err, os.ErrNotExist) {
 		fmt.Println("Start downloading...")
-		err := downloadFile(baseUrl+pathBuilder(Model_Atmo, 7, 8, 2024, ModelCycle_00, 0, GridSize_0p50), fileName)
+		err := downloadFile(baseUrl+pathBuilder(Model_Atmo, 8, 8, 2024, ModelCycle_06, 0, GridSize_1p00), fileName)
 		//err := downloadFile(url, fileName)
 		if err != nil {
 			panic(err)
@@ -153,21 +153,21 @@ func main() {
 	}
 
 	// messages id: https://www.nco.ncep.noaa.gov/pmb/products/gfs/gfs.t00z.pgrb2.0p25.f000.shtml
-	messages:=getMessages(fileName)
+	messages := getMessages(fileName)
 
 	pressure_sea_lvl := 0
 	processMessage(messages[pressure_sea_lvl], pressure_sea_lvl)
-	
-	sunshine_duration  := 600 - 1
+
+	sunshine_duration := 600 - 1
 	processMessage(messages[sunshine_duration], sunshine_duration)
 
-	temp_2_m_above_ground  := 580 - 1
+	temp_2_m_above_ground := 580 - 1
 	processMessage(messages[temp_2_m_above_ground], temp_2_m_above_ground)
-	
+
 	surface_mask := 682 - 1
 	processMessage(messages[surface_mask], surface_mask)
 
-
+	// fmt.Print(len(messages))
 	// for id, message := range messages {
 	// 	processMessage(message, id)
 	// }
