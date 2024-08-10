@@ -15,7 +15,7 @@ import (
 // GFS doc: https://www.emc.ncep.noaa.gov/emc/pages/numerical_forecast_systems/gfs/documentation.php
 
 const (
-	baseUrl = "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod"
+	baseURL = "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod"
 
 	// filtered url: https://nomads.ncep.noaa.gov/gribfilter.php?ds=fnl
 	// url = "https://nomads.ncep.noaa.gov/cgi-bin/filter_fnl.pl?dir=%2Fgdas.20240807%2F00%2Fatmos&file=gdas.t00z.pgrb2.1p00.f000&var_PRES=on&var_TMP=on&lev_2_m_above_ground=on&lev_80_m_above_ground=on"
@@ -26,21 +26,21 @@ type ModelCycle string
 type GridSize string
 
 const (
-	Model_Atmo = Model("atmos")
-	Model_Wave = Model("wave")
+	ModelAtmo = Model("atmos")
+	ModelWave = Model("wave")
 )
 
 const (
-	ModelCycle_00 = ModelCycle("00")
-	ModelCycle_06 = ModelCycle("06")
-	ModelCycle_12 = ModelCycle("12")
-	ModelCycle_18 = ModelCycle("18")
+	ModelCycle00 = ModelCycle("00")
+	ModelCycle06 = ModelCycle("06")
+	ModelCycle12 = ModelCycle("12")
+	ModelCycle18 = ModelCycle("18")
 )
 
 const (
-	GridSize_0p25 = GridSize("0p25")
-	GridSize_0p50 = GridSize("0p50")
-	GridSize_1p00 = GridSize("1p00")
+	GridSize0p25 = GridSize("0p25")
+	GridSize0p50 = GridSize("0p50")
+	GridSize1p00 = GridSize("1p00")
 )
 
 func pathBuilder(model Model, day int, month int, year int, cycle ModelCycle, forecastTime int, gridSize GridSize) string {
@@ -143,7 +143,7 @@ func main() {
 
 	if _, err := os.Stat(fileName); errors.Is(err, os.ErrNotExist) {
 		fmt.Println("Start downloading...")
-		err := downloadFile(baseUrl+pathBuilder(Model_Atmo, 8, 8, 2024, ModelCycle_06, 0, GridSize_1p00), fileName)
+		err := downloadFile(baseURL+pathBuilder(ModelAtmo, 8, 8, 2024, ModelCycle06, 0, GridSize1p00), fileName)
 		//err := downloadFile(url, fileName)
 		if err != nil {
 			panic(err)
