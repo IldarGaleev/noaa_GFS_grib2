@@ -12,11 +12,16 @@
 - `ICON` - хорош по осадкам
 
 
-
 #### Ссылки
  - https://vlab.noaa.gov/web/gfs/documentation
  - https://method.meteorf.ru/publ/tr/tr359/tolstih.pdf
  - https://meteolabs.org/article/что-такое-модели-прогноза-погоды/
+---
+- https://www.ecmwf.int - сайт `ECMWF`
+- https://confluence.ecmwf.int/display/FUG/1+Introduction - Forecast user guide от ECMWF
+- https://github.com/ecmwf/eccodes - библиотека (`C`/`Fortran`/`Python`) ecCodes от ECMWF для работы с файлами `GRIB` и `BUFR`
+- https://www.openskiron.org/en/icon-gribs - GRIB файлы для модели ICON
+- https://apps.ecmwf.int/datasets/data/tigge/levtype=sfc/type=cf/ - страница запроса GRIB файлов от ECMWF (требуется аккаунт)
 ---
  - https://meteoinfo.ru/categ-articles/11-actuals-cat/1281-1246618396grib - (GRIB1) данные от Росгидромета?
  - https://meteoinfo.ru/images/media/books-docs/WMO/wmo-N306_vI2_codes.pdf - описание формата GRIB2 на русском языке
