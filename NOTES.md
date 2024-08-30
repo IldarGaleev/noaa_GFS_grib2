@@ -26,6 +26,8 @@
  - https://method.meteorf.ru/publ/tr/tr359/tolstih.pdf
  - https://meteolabs.org/article/что-такое-модели-прогноза-погоды/
 ---
+ - https://www.ready.noaa.gov/index.php - Real-time Environmental Applications and Display sYstem, запрос и визуализация данных о погоде
+---
 - https://www.ecmwf.int - сайт `ECMWF`
 - https://confluence.ecmwf.int/display/FUG/1+Introduction - Forecast user guide от ECMWF
 - https://github.com/ecmwf/eccodes - библиотека (`C`/`Fortran`/`Python`) ecCodes от ECMWF для работы с файлами `GRIB` и `BUFR`
