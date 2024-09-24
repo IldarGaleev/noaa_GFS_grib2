@@ -15,6 +15,10 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+const (
+	MAX_BATCH_SIZE = 100
+)
+
 type PostgresDataProvider struct {
 	dsn string
 	db  *gorm.DB
@@ -39,7 +43,7 @@ func (d *PostgresDataProvider) MustRun() {
 func (d *PostgresDataProvider) runWithDialector(dialector gorm.Dialector) error {
 	db, err := gorm.Open(dialector, &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
-		Logger: logger.Default.LogMode(logger.Silent),
+		Logger:                                   logger.Default.LogMode(logger.Silent),
 	})
 
 	if err != nil {
@@ -130,6 +134,9 @@ func (d *PostgresDataProvider) AddRecord(ctx context.Context, record appModels.R
 }
 
 func (d *PostgresDataProvider) AddRecords(ctx context.Context, records []appModels.Record) error {
+	if len(records) > MAX_BATCH_SIZE {
+		return storage.ErrBatchSize
+	}
 
 	data := make([]models.PGRecord, 0, len(records))
 	for _, record := range records {
