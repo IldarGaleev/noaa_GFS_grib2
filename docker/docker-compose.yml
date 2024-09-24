@@ -1,0 +1,30 @@
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: weather-postgis
+    ports:
+      - 5555:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: weather
+    volumes:
+      - pg-weather-data:/var/lib/postgresql/data
+    networks:
+     - weather-lan
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d weather"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    restart: on-failure
+
+networks:
+  weather-lan:
+    driver: bridge
+
+volumes:
+  pg-weather-data:
