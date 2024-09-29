@@ -13,17 +13,18 @@ import (
 	"os"
 	"path/filepath"
 
+	"gfsloader/internal/models"
+	"gfsloader/internal/storage/postgres"
 	"gfsloader/utils/indexfile"
-	"gfsloader/utils/models"
 	"gfsloader/utils/noaa"
-	"gfsloader/utils/storage/postgres"
 
 	"github.com/nilsmagnus/grib/griblib"
 	"github.com/schollz/progressbar/v3"
 )
 
 var (
-	ErrProcess = errors.New("process error")
+	ErrProcess  = errors.New("process error")
+	ErrDownload = errors.New("download error")
 )
 
 func download(label string, destinationPath, downloadURL string, from, to uint64) error {
@@ -48,16 +49,22 @@ func download(label string, destinationPath, downloadURL string, from, to uint64
 
 	defer resp.Body.Close()
 
-	f, _ := os.OpenFile(tempDestinationPath, os.O_CREATE|os.O_WRONLY, 0644)
+	switch resp.StatusCode {
+	case 200, 206:
+		f, _ := os.OpenFile(tempDestinationPath, os.O_CREATE|os.O_WRONLY, 0644)
 
-	bar := progressbar.DefaultBytes(
-		resp.ContentLength,
-		label,
-	)
-	io.Copy(io.MultiWriter(f, bar), resp.Body)
-	f.Close()
-	os.Rename(tempDestinationPath, destinationPath)
-	return nil
+		bar := progressbar.DefaultBytes(
+			resp.ContentLength,
+			label,
+		)
+		io.Copy(io.MultiWriter(f, bar), resp.Body)
+		f.Close()
+		os.Rename(tempDestinationPath, destinationPath)
+		return nil
+	default:
+		return errors.Join(ErrDownload, fmt.Errorf("status code: %d : %s", resp.StatusCode, downloadURL))
+	}
+
 }
 
 func getGribMessages(fileName string) ([]*griblib.Message, error) {
@@ -116,6 +123,10 @@ func processData(day, month, year, forecastTime int, cycle noaa.ModelCycle, rate
 		},
 		{
 			param: "CRAIN",
+			layer: "surface",
+		},
+		{
+			param: "VIS",
 			layer: "surface",
 		},
 	}
@@ -261,12 +272,13 @@ func main() {
 
 	ctx := context.TODO()
 
-	day := 17
+	day := 29
 	month := 9
 	year := 2024
-	cycle := noaa.ModelCycle00
+	cycle := noaa.ModelCycle06
 	cycleInt, _ := strconv.Atoi(string(cycle))
 	// forecastTime := 0
+	gridSize := float32(0.5)
 
 	maxConnections := 3
 	rate := make(chan struct{}, maxConnections)
@@ -275,6 +287,31 @@ func main() {
 
 	storageProvider := postgres.New("host=localhost port=5555 user=postgres dbname=weather password=postgres sslmode=disable")
 	storageProvider.MustRun()
+	err := storageProvider.InitGrid(ctx, func() ([]models.GridInfo, func(int)) {
+		totalCells := int(180.0 / gridSize * 360.0 / gridSize)
+		result := make([]models.GridInfo, 0, totalCells)
+
+		bar := progressbar.Default(int64(totalCells), "Create grid")
+
+		for lat := float32(-90.0); lat <= 90; lat += gridSize {
+			for lng := float32(0.0); lng <= 359.0; lng += gridSize {
+				result = append(
+					result,
+					models.GridInfo{
+						Lat:  lat,
+						Lng:  lng,
+						Size: gridSize,
+					})
+			}
+		}
+		return result, func(writed int) {
+			bar.Add(writed)
+		}
+	})
+
+	if err != nil {
+		panic("failed to init database grid table")
+	}
 
 	for i := 0; i < 12; i += 3 {
 		wg.Add(1)
@@ -316,6 +353,9 @@ func main() {
 					Temperature: float32(record["TMP"]),
 					UWind:       float32(record["UGRD"]),
 					VWind:       float32(record["VGRD"]),
+					CRain:       float32(record["CRAIN"]),
+					RHUmidity:   float32(record["RH"]),
+					Visibility:  float32(record["VIS"]),
 				}
 				dbRecords = append(dbRecords, newRecord)
 				bar.Add(1)
@@ -328,7 +368,7 @@ func main() {
 			rCount := len(records)
 			dbBar := progressbar.Default(int64(rCount/batchSize), "Write to db")
 			for i := 0; i < rCount-1; i += batchSize {
-				err = transact.AddRecords(ctx, dbRecords[i:min(i+batchSize, rCount-1)])
+				err = transact.SetRecords(ctx, dbRecords[i:min(i+batchSize, rCount-1)])
 				dbBar.Add(1)
 				if err != nil {
 					storageProvider.Rollback(ctx)
