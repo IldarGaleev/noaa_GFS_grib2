@@ -44,3 +44,8 @@
  - https://habr.com/ru/articles/239251/ - Google WEB Mercator `EPSG:3857`
  - https://www.earthdata.nasa.gov/eosdis - EOSDIS
  - https://overpass-turbo.eu/ - Overpass Turbo инструмент для запроса данных из OSM
+---
+ - GFS doc: https://www.emc.ncep.noaa.gov/emc/pages/numerical_forecast_systems/gfs/documentation.php
+ - filtered url: https://nomads.ncep.noaa.gov/gribfilter.php?ds=fnl
+ - messages id analyse: https://www.nco.ncep.noaa.gov/pmb/products/gfs/gfs.t00z.pgrb2.0p25.f000.shtml
+ - messages id forecast: https://www.nco.ncep.noaa.gov/pmb/products/gfs/gfs.t00z.pgrb2.0p25.f003.shtml
