@@ -297,7 +297,7 @@ func (d *PostgresDataProvider) GetForecastBySegments(ctx context.Context, segmen
 	err := db.Raw(fmt.Sprintf("WITH "+
 		"q(f,t,geo) AS (VALUES %s),"+
 		"cells AS (SELECT g.geometry AS geo, g.id AS p, q.f as f, q.t as t,ST_Intersection(g.geometry,q.geo) AS s FROM grid g JOIN q ON ST_Intersects(g.geometry ,q.geo))"+
-		"SELECT st_astext(c.s) AS sec,r.temperature - 273.15 AS temperature, r.pressure AS pressure,r.c_rain AS c_rain,r.r_humidity AS r_humidity,r.date_time AT TIME ZONE 'UTC' AS date FROM records r JOIN cells c ON c.p=r.grid_id AND r.date_time BETWEEN c.f AND c.t",
+		"SELECT st_astext(c.s) AS sec,r.temperature - 273.15 AS temperature, r.pressure AS pressure,r.c_rain AS c_rain,r.r_humidity AS r_humidity,r.u_wind AS u_wind,r.v_wind AS v_wind,r.date_time AT TIME ZONE 'UTC' AS date FROM records r JOIN cells c ON c.p=r.grid_id AND r.date_time BETWEEN c.f AND c.t",
 		valsSQL,
 	),
 		data...,

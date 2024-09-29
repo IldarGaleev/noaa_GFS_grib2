@@ -88,25 +88,25 @@ components:
         date-time:
           type: string
           format: date-time
-        temperature_2m:
+        temperature-2m:
           description: "Temperature 2m above ground (Celsius)"
           type: number
           format: float
           example: -17.730957
-        pressure_surface:
+        pressure-surface:
           description: "Pressure on surface (Pa)"
           type: number
           format: float
           example: 99893.937500
-        rhumidity_surface:
+        rhumidity-surface:
           description: "Relative humidity on surface (%)"
           type: number
           format: float
-        crain_surface:
+        crain-surface:
           description: "Categorical rain on surface"
           type: number
           format: float
-        wind_10m:
+        wind-10m:
           description: "Wind 10m above ground"
           $ref: '#/components/schemas/WindInfo'
     ForecastResponse:
