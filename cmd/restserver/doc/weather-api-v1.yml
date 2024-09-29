@@ -1,0 +1,123 @@
+openapi: 3.0.3
+info: 
+  version: 1.0.0
+  title: Weather service
+  description: "Weather service"
+
+servers:
+  - url: "http://localhost:8080/api/v1"
+tags:
+  - name: "forecast"
+    description: "weather information"
+
+paths: 
+  /bywkt:
+    post: 
+      tags: 
+        - "forecast"
+      summary: "Request weather by WKT"
+      operationId: "byWKT"
+      requestBody:
+          description: "request body"
+          content:
+              application/json:
+                schema:
+                  required:
+                      - shapes 
+                  properties:                                          
+                      components:
+                        type: array
+                        default: null
+                        items:
+                          type: string                          
+                          enum:
+                            - temperature_2m
+                            - pressure_surface
+                            - wind_10m
+                            - rhumidity_surface
+                            - crain_surface
+                      shapes:
+                        type: array
+                        items:
+                            $ref: '#/components/schemas/WKTRequest'
+      responses:
+        '200':
+            description: 'Weather forecast in requested WKT shape'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ForecastResponse'
+
+components:
+  schemas:
+    WKTRequest:
+      type: object
+      required:
+        - wkt
+        - from
+      properties:
+        wkt:
+          description: "WKT Shape for search" 
+          type: string
+          example: "LINESTRING(36 55, 39 55)"
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+    
+    WindInfo:
+      type: object
+      properties: 
+        u:
+          description: "U - component (m/s)"
+          type: number
+          format: float
+          example: -4.199873 
+        v:
+          description: "V - component (m/s)"
+          type: number
+          format: float
+          example: 1.901926
+    ForecastDetail:
+      type: object
+      properties: 
+        date-time:
+          type: string
+          format: date-time
+        temperature_2m:
+          description: "Temperature 2m above ground (Celsius)"
+          type: number
+          format: float
+          example: -17.730957
+        pressure_surface:
+          description: "Pressure on surface (Pa)"
+          type: number
+          format: float
+          example: 99893.937500
+        rhumidity_surface:
+          description: "Relative humidity on surface (%)"
+          type: number
+          format: float
+        crain_surface:
+          description: "Categorical rain on surface"
+          type: number
+          format: float
+        wind_10m:
+          description: "Wind 10m above ground"
+          $ref: '#/components/schemas/WindInfo'
+    ForecastResponse:
+      type: object
+      properties: 
+        shape:
+          type: string
+          example: "LINESTRING(36 55, 39 55)"
+        forecast:
+          type: array
+          items:
+            $ref: '#/components/schemas/ForecastDetail'
+
+
