@@ -44,12 +44,6 @@ func (h *WKTHandler) HandlerByWKT(c *gin.Context) {
 
 	for _, item := range body.Shapes {
 
-		// from, err := time.Parse(time.RFC3339, item.From)
-		// if err != nil {
-		// 	fmt.Print(err)
-		// }
-		// from = from.Round(duration_3h)
-
 		to := item.To
 		if to != nil {
 			_to := *item.To
