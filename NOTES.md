@@ -35,6 +35,7 @@
 - https://apps.ecmwf.int/datasets/data/tigge/levtype=sfc/type=cf/ - страница запроса GRIB файлов от ECMWF (требуется аккаунт)
 ---
  - https://meteoinfo.ru/categ-articles/11-actuals-cat/1281-1246618396grib - (GRIB1) данные от Росгидромета?
+ - https://codes.ecmwf.int/grib/format/grib1/sections/1/ - описание формата GRIB1
  - https://meteoinfo.ru/images/media/books-docs/WMO/wmo-N306_vI2_codes.pdf - описание формата GRIB2 на русском языке
  - https://method.meteorf.ru/publ/tr/tr346/rosin.pdf - описание принципа работы модели `Т169L31`
 ---
